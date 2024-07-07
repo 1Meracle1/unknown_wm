@@ -1,5 +1,0 @@
-ninja_dyndep_version = 1.0
-build CMakeFiles/unknown_wm.dir/src/main.cpp.o: dyndep
-
-build CMakeFiles/unknown_wm.dir/src/window_manager.cpp.o: dyndep
-
