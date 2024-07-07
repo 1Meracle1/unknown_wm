@@ -1,0 +1,9 @@
+{
+  "revision": 0,
+  "rules": [
+    {
+      "primary-output": "CMakeFiles/unknown_wm.dir/src/window_manager.cpp.o"
+    }
+  ],
+  "version": 1
+}

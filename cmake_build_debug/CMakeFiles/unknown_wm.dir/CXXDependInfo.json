@@ -1,0 +1,21 @@
+{
+	"bmi-installation" : null,
+	"compiler-frontend-variant" : "GNU",
+	"compiler-id" : "Clang",
+	"compiler-simulate-id" : "",
+	"config" : "Debug",
+	"cxx-modules" : {},
+	"dir-cur-bld" : "/home/qamosu/dev/cpp/unknown_wm/cmake_build_debug",
+	"dir-cur-src" : "/home/qamosu/dev/cpp/unknown_wm",
+	"dir-top-bld" : "/home/qamosu/dev/cpp/unknown_wm/cmake_build_debug",
+	"dir-top-src" : "/home/qamosu/dev/cpp/unknown_wm",
+	"exports" : [],
+	"forward-modules-from-target-dirs" : [],
+	"include-dirs" : 
+	[
+		"/home/qamosu/dev/cpp/unknown_wm/third_party/spdlog/include"
+	],
+	"language" : "CXX",
+	"linked-target-dirs" : [],
+	"module-dir" : "/home/qamosu/dev/cpp/unknown_wm/cmake_build_debug/CMakeFiles/unknown_wm.dir"
+}

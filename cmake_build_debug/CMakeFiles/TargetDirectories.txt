@@ -1,0 +1,6 @@
+/home/qamosu/dev/cpp/unknown_wm/cmake_build_debug/CMakeFiles/unknown_wm.dir
+/home/qamosu/dev/cpp/unknown_wm/cmake_build_debug/CMakeFiles/edit_cache.dir
+/home/qamosu/dev/cpp/unknown_wm/cmake_build_debug/CMakeFiles/rebuild_cache.dir
+/home/qamosu/dev/cpp/unknown_wm/cmake_build_debug/third_party/spdlog/CMakeFiles/spdlog.dir
+/home/qamosu/dev/cpp/unknown_wm/cmake_build_debug/third_party/spdlog/CMakeFiles/edit_cache.dir
+/home/qamosu/dev/cpp/unknown_wm/cmake_build_debug/third_party/spdlog/CMakeFiles/rebuild_cache.dir

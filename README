@@ -1,0 +1,4 @@
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S . -B cmake_build_debug
+cmake --build cmake_build_debug --target unknown_wm -j 10
+
+pkg-config --list-all | grep -i log
