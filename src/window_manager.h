@@ -13,7 +13,6 @@ public:
 
 private:
   explicit WindowManager(std::unique_ptr<Connection> connection);
-  void RegisterWM();
 
 private:
   std::unique_ptr<Connection> connection_;

@@ -11,23 +11,26 @@ constexpr auto BORDER_COLOR_ACTIVE = 0xff666666;
 constexpr auto BORDER_COLOR_INACTIVE = 0xffffffff;
 constexpr auto BG_COLOR = 0x0000ff;
 
-template <typename F, typename... KeyTs>
-constexpr auto Keybinding(F f, KeyTs... keys) {
-  return std::pair{std::vector{std::forward<KeyTs>(keys)...}, f};
+template <typename F, typename K>
+constexpr auto Keybinding(F &&f, K modifier, K key_symbol) {
+  return std::pair{Key{modifier, key_symbol}, std::forward<F>(f)};
 }
 
-const std::vector<std::pair<std::vector<Keys>, ActionType>> keybindings{
-    Keybinding(Action(WindowMove, +10, 0), Keys::Alt, Keys::Shift, Keys::Right),
-    Keybinding(Action(WindowMove, -10, 0), Keys::Alt, Keys::Shift, Keys::Left),
-    Keybinding(Action(WindowMove, 0, +10), Keys::Alt, Keys::Shift, Keys::Up),
-    Keybinding(Action(WindowMove, 0, -10), Keys::Alt, Keys::Shift, Keys::Down),
+const std::vector<std::pair<Key, ActionType>> KEYBINDINGS{
+    Keybinding(Action(WindowMove, +10, 0), Keys::Alt | Keys::Shift,
+               Keys::Right),
+    Keybinding(Action(WindowMove, -10, 0), Keys::Alt | Keys::Shift, Keys::Left),
+    Keybinding(Action(WindowMove, 0, +10), Keys::Alt | Keys::Shift, Keys::Up),
+    Keybinding(Action(WindowMove, 0, -10), Keys::Alt | Keys::Shift, Keys::Down),
 
     // resize based on the bottom right corner of the window
-    Keybinding(Action(WindowResize, 0, +10), Keys::Alt, Keys::Ctrl, Keys::Down),
-    Keybinding(Action(WindowResize, 0, -10), Keys::Alt, Keys::Ctrl, Keys::Up),
-    Keybinding(Action(WindowResize, +10, 0), Keys::Alt, Keys::Ctrl,
+    Keybinding(Action(WindowResize, 0, +10), Keys::Alt | Keys::Ctrl,
+               Keys::Down),
+    Keybinding(Action(WindowResize, 0, -10), Keys::Alt | Keys::Ctrl, Keys::Up),
+    Keybinding(Action(WindowResize, +10, 0), Keys::Alt | Keys::Ctrl,
                Keys::Right),
-    Keybinding(Action(WindowResize, -10, 0), Keys::Alt, Keys::Ctrl, Keys::Left),
+    Keybinding(Action(WindowResize, -10, 0), Keys::Alt | Keys::Ctrl,
+               Keys::Left),
 
     // resize in all the four sides
     Keybinding(Action(WindowResize, +10, +10), Keys::Alt, Keys::Plus),
@@ -51,22 +54,22 @@ const std::vector<std::pair<std::vector<Keys>, ActionType>> keybindings{
     Keybinding(Action(WorkspaceFocus, 9), Keys::Alt, Keys::Number_9),
 
     // move window to a workspace
-    Keybinding(Action(WorkspaceWindowMove, 1), Keys::Alt, Keys::Shift,
+    Keybinding(Action(WorkspaceWindowMove, 1), Keys::Alt | Keys::Shift,
                Keys::Number_1),
-    Keybinding(Action(WorkspaceWindowMove, 2), Keys::Alt, Keys::Shift,
+    Keybinding(Action(WorkspaceWindowMove, 2), Keys::Alt | Keys::Shift,
                Keys::Number_2),
-    Keybinding(Action(WorkspaceWindowMove, 3), Keys::Alt, Keys::Shift,
+    Keybinding(Action(WorkspaceWindowMove, 3), Keys::Alt | Keys::Shift,
                Keys::Number_3),
-    Keybinding(Action(WorkspaceWindowMove, 4), Keys::Alt, Keys::Shift,
+    Keybinding(Action(WorkspaceWindowMove, 4), Keys::Alt | Keys::Shift,
                Keys::Number_4),
-    Keybinding(Action(WorkspaceWindowMove, 5), Keys::Alt, Keys::Shift,
+    Keybinding(Action(WorkspaceWindowMove, 5), Keys::Alt | Keys::Shift,
                Keys::Number_5),
-    Keybinding(Action(WorkspaceWindowMove, 6), Keys::Alt, Keys::Shift,
+    Keybinding(Action(WorkspaceWindowMove, 6), Keys::Alt | Keys::Shift,
                Keys::Number_6),
-    Keybinding(Action(WorkspaceWindowMove, 7), Keys::Alt, Keys::Shift,
+    Keybinding(Action(WorkspaceWindowMove, 7), Keys::Alt | Keys::Shift,
                Keys::Number_7),
-    Keybinding(Action(WorkspaceWindowMove, 8), Keys::Alt, Keys::Shift,
+    Keybinding(Action(WorkspaceWindowMove, 8), Keys::Alt | Keys::Shift,
                Keys::Number_8),
-    Keybinding(Action(WorkspaceWindowMove, 9), Keys::Alt, Keys::Shift,
+    Keybinding(Action(WorkspaceWindowMove, 9), Keys::Alt | Keys::Shift,
                Keys::Number_9),
 };

@@ -1,6 +1,9 @@
 #include "connection.h"
-#include <xcb/xcb_keysyms.h>
+#include "config.h"
+#include "keys.h"
 #include <memory>
+#include <xcb/xcb.h>
+#include <xcb/xcb_keysyms.h>
 
 std::unique_ptr<Connection> Connection::Init() {
   int screen_number;
@@ -34,6 +37,15 @@ Connection::Connection(xcb_connection_t *connection,
 Connection::~Connection() {
   xcb_key_symbols_free(key_symbols_);
   xcb_disconnect(connection_);
+}
+
+void Connection::SubscribeWMEvents() const {
+  for (const auto screen : screens_) {
+    ChangeWindowAttributesChecked(screen->root, XCB_CW_EVENT_MASK,
+                                  XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+                                      XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY |
+                                      XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT);
+  }
 }
 
 [[nodiscard]] std::vector<std::pair<xcb_window_t, std::size_t>>
@@ -104,8 +116,28 @@ Connection::ListMappedWindows() const {
 }
 
 void Connection::RegisterKeybindings() const {
+  // in case those are toggled we can still handle our other keybindings not
+  // being affected by additional keys added to the combination
+  constexpr std::array toggled_modifiers{0u,
+                                         Keys::CapsLock,
+                                         Keys::NumLock,
+                                         Keys::ScrollLock,
+                                         Keys::CapsLock | Keys::NumLock,
+                                         Keys::CapsLock | Keys::ScrollLock,
+                                         Keys::NumLock | Keys::ScrollLock,
+                                         Keys::CapsLock | Keys::NumLock |
+                                             Keys::ScrollLock};
+
   for (auto screen : screens_) {
     xcb_ungrab_key(connection_, XCB_GRAB_ANY, screen->root, XCB_MOD_MASK_ANY);
+
+    for (const auto &[key, action] : KEYBINDINGS) {
+      for (const auto keycode : GetKeyCodes(key.key_symbol)) {
+        for (const auto toggled_modifier : toggled_modifiers) {
+          GrabKey(key.modifier | toggled_modifier, key.key_symbol);
+        }
+      }
+    }
   }
 }
 
@@ -115,6 +147,19 @@ void Connection::GrabKey(uint16_t modifier, xcb_keycode_t key) const {
         xcb_grab_key_checked(connection_, true, screen->root, modifier, key,
                              XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
     auto error = xcb_request_check(connection_, cookie);
-    ERRORF("Failed to grab key: {}, error: {}", key, error->error_code);
+    if (error) {
+      ERRORF("Failed to grab key: {}, error: {}", key, error->error_code);
+      free(error);
+    }
   }
+}
+
+[[nodiscard]] std::vector<xcb_keycode_t>
+Connection::GetKeyCodes(xcb_keysym_t symbol) const {
+  auto keycodes = std::unique_ptr<xcb_keycode_t[], decltype(&free)>{
+      xcb_key_symbols_get_keycode(key_symbols_, symbol), free};
+  std::size_t count = 0;
+  for (; keycodes[count] != XCB_NO_SYMBOL; ++count)
+    ;
+  return std::vector<xcb_keycode_t>{keycodes.get(), keycodes.get() + count};
 }

@@ -10,6 +10,7 @@ find_package(PkgConfig)
 pkg_check_modules(X11 REQUIRED x11)
 pkg_check_modules(XCB REQUIRED xcb)
 pkg_check_modules(XCB_KEYSYMS REQUIRED xcb-keysyms)
+pkg_check_modules(XCB_UTIL REQUIRED xcb-util)
 
 add_executable(${PROJECT_NAME} 
   src/main.cpp
@@ -21,6 +22,8 @@ add_executable(${PROJECT_NAME}
   src/window_manager.cpp
   src/connection.h
   src/connection.cpp
+  src/event.h
+  src/event.cpp
 )
 
 set(SPD_LOG_DIR third_party/spdlog)
@@ -73,6 +76,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   ${X11_LIBRARIES}
   ${XCB_LIBRARIES}
   ${XCB_KEYSYMS_LIBRARIES}
+  ${XCB_UTIL_LIBRARIES}
   spdlog::spdlog
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE

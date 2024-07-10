@@ -1,6 +1,7 @@
 #include "window_manager.h"
 #include "config.h"
 #include "connection.h"
+#include "event.h"
 #include "logging.h"
 
 #include <X11/X.h>
@@ -9,6 +10,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <xcb/xcb.h>
+#include <xcb/xcb_event.h>
 #include <xcb/xproto.h>
 
 #include <csignal>
@@ -27,7 +29,8 @@ WindowManager::WindowManager(std::unique_ptr<Connection> connection)
     : connection_{std::move(connection)} {}
 
 void WindowManager::Run() {
-  RegisterWM();
+  INFO("Registering WM events on screens roots");
+  connection_->SubscribeWMEvents();
 
   // do cleanup of zombie processes
   {
@@ -54,6 +57,7 @@ void WindowManager::Run() {
                                                BORDER_COLOR_INACTIVE);
   }
 
+  // reapply focus to a previously focused window
   if (auto focused_win_opt = connection_->FocusedWindow(); focused_win_opt) {
     auto focused_win = focused_win_opt.value();
     INFO("Non-root focused window found, reapplying focus on it");
@@ -64,14 +68,25 @@ void WindowManager::Run() {
     connection_->SetInputFocus(XCB_NONE, XCB_NONE);
     connection_->SetInputFocus(XCB_INPUT_FOCUS_PARENT, focused_win);
   }
-}
 
-void WindowManager::RegisterWM() {
-  INFO("Registering WM events on screens roots");
-  for (const auto screen : connection_->GetScreens()) {
-    connection_->ChangeWindowAttributesChecked(
-        screen->root, XCB_CW_EVENT_MASK,
-        XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY |
-            XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT);
+  INFO("Registering keybindings");
+  connection_->RegisterKeybindings();
+
+  INFO("Starting event loop");
+  // listen and process events
+  for (;;) {
+    connection_->Flush();
+    if (auto error = xcb_connection_has_error(connection_->Get()); error != 0) {
+      ERRORF("Encountered connection error: {}", error);
+      break;
+    }
+
+    auto event = connection_->WaitForEvent();
+    if (!event) {
+      ERROR("Received nullptr event");
+      continue;
+    }
+    auto event_type = XCB_EVENT_RESPONSE_TYPE(event.get());
+    DispatchEvent(*connection_, event_type, std::move(event));
   }
 }

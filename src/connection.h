@@ -19,6 +19,9 @@ public:
   [[nodiscard]] inline const std::vector<xcb_screen_t *> &GetScreens() const;
 
   [[nodiscard]] inline xcb_connection_t *Get() const;
+
+  void SubscribeWMEvents() const;
+
   inline auto ChangeWindowAttributesChecked(xcb_window_t window, uint32_t flags,
                                             uint32_t values) const;
 
@@ -46,6 +49,11 @@ public:
 
   void RegisterKeybindings() const;
   void GrabKey(uint16_t modifier, xcb_keycode_t key) const;
+  [[nodiscard]] std::vector<xcb_keycode_t>
+  GetKeyCodes(xcb_keysym_t symbol) const;
+
+  inline void Flush() const;
+  [[nodiscard]] inline auto WaitForEvent() const;
 
 private:
   explicit Connection(xcb_connection_t *connection,
@@ -53,8 +61,8 @@ private:
 
 private:
   xcb_connection_t *connection_;
-  xcb_key_symbols_t *key_symbols_;
   std::vector<xcb_screen_t *> screens_;
+  xcb_key_symbols_t *key_symbols_;
 };
 
 [[nodiscard]] inline const std::vector<xcb_screen_t *> &
@@ -132,4 +140,11 @@ inline bool Connection::SetInputFocus(const uint8_t revert_to,
     return false;
   }
   return true;
+}
+
+inline void Connection::Flush() const { xcb_flush(connection_); }
+
+[[nodiscard]] inline auto Connection::WaitForEvent() const {
+  return std::unique_ptr<xcb_generic_event_t, decltype(&free)>{
+      xcb_wait_for_event(connection_), &free};
 }
