@@ -1,6 +1,7 @@
 #pragma once
 
 #include "connection.h"
+#include "event.h"
 #include <format>
 #include <memory>
 #include <vector>
@@ -16,4 +17,5 @@ private:
 
 private:
   std::unique_ptr<Connection> connection_;
+  EventHandler event_handler_;
 };

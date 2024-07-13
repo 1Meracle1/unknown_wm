@@ -6,10 +6,10 @@
 #include <map>
 #include <vector>
 
-constexpr auto BORDER_WIDTH = 3U;
-constexpr auto BORDER_COLOR_ACTIVE = 0xff666666;
-constexpr auto BORDER_COLOR_INACTIVE = 0xffffffff;
-constexpr auto BG_COLOR = 0x0000ff;
+constexpr auto BORDER_WIDTH = 30U;
+constexpr auto BORDER_COLOR_ACTIVE = 0x9299f7;
+constexpr auto BORDER_COLOR_INACTIVE = 0x0a0a0a;
+constexpr auto BG_COLOR = 0x0a0a0a;
 
 template <typename F, typename K>
 constexpr auto Keybinding(F &&f, K modifier, K key_symbol) {

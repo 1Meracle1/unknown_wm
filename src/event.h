@@ -7,57 +7,91 @@
 
 using EventType = int;
 using Event = std::unique_ptr<xcb_generic_event_t, decltype(&free)>;
-using EventHandler = std::function<void(Connection &, EventType, Event)>;
 
-void OnErrorEventHandler(Connection &connection, EventType event_type,
-                         Event event);
-void OnConfigureEventHandler(Connection &connection, EventType event_type,
-                             Event event);
-void OnMotionNotifyEventHandler(Connection &connection, EventType event_type,
-                                Event event);
-void OnKeyPressEventHandler(Connection &connection, EventType event_type,
-                            Event event);
-void OnEnterNotifyEventHandler(Connection &connection, EventType event_type,
-                               Event event);
-void OnLeaveNotifyEventHandler(Connection &connection, EventType event_type,
-                               Event event);
-void OnFocusInEventHandler(Connection &connection, EventType event_type,
-                           Event event);
-void OnFocusOutEventHandler(Connection &connection, EventType event_type,
-                            Event event);
-void OnCreateNotifyEventHandler(Connection &connection, EventType event_type,
-                                Event event);
-void OnDestroyNotifyEventHandler(Connection &connection, EventType event_type,
-                                 Event event);
-void OnMapRequestEventHandler(Connection &connection, EventType event_type,
-                              Event event);
-void OnUnmapNotifyEventHandler(Connection &connection, EventType event_type,
-                               Event event);
-void OnPropertyNotifyEventHandler(Connection &connection, EventType event_type,
-                                  Event event);
-void OnClientMessageEventHandler(Connection &connection, EventType event_type,
-                                 Event event);
+class EventHandler {
+public:
+  explicit EventHandler(Connection &connection);
 
-static const std::map<EventType, EventHandler> event_map{
-    {0, OnErrorEventHandler},
-    {XCB_CONFIGURE_REQUEST, OnConfigureEventHandler},
-    {XCB_MOTION_NOTIFY, OnMotionNotifyEventHandler},
-    {XCB_KEY_PRESS, OnKeyPressEventHandler},
-    {XCB_ENTER_NOTIFY, OnEnterNotifyEventHandler},
-    {XCB_LEAVE_NOTIFY, OnLeaveNotifyEventHandler},
-    {XCB_FOCUS_IN, OnFocusInEventHandler},
-    {XCB_FOCUS_OUT, OnFocusOutEventHandler},
-    {XCB_CREATE_NOTIFY, OnCreateNotifyEventHandler},
-    {XCB_DESTROY_NOTIFY, OnDestroyNotifyEventHandler},
-    {XCB_MAP_REQUEST, OnMapRequestEventHandler},
-    {XCB_UNMAP_NOTIFY, OnUnmapNotifyEventHandler},
-    {XCB_PROPERTY_NOTIFY, OnPropertyNotifyEventHandler},
-    {XCB_CLIENT_MESSAGE, OnClientMessageEventHandler},
+  inline void DispatchEvent(EventType event_type, Event event);
+
+  void WindowResize(int x_amount, int y_amount);
+  void WindowMove(int x_amount, int y_amount);
+  void WindowFocus(int x_amount, int y_amount);
+  void WorkspaceFocus(uint32_t workspace_id);
+  void WorkspaceWindowMove(uint32_t workspace_id);
+
+private:
+  void OnErrorEventHandler(EventType event_type, Event event);
+  void OnConfigureRequestEventHandler(EventType event_type, Event event);
+  void OnMotionNotifyEventHandler(EventType event_type, Event event);
+  void OnKeyPressEventHandler(EventType event_type, Event event);
+  void OnEnterNotifyEventHandler(EventType event_type, Event event);
+  void OnLeaveNotifyEventHandler(EventType event_type, Event event);
+  void OnFocusInEventHandler(EventType event_type, Event event);
+  void OnFocusOutEventHandler(EventType event_type, Event event);
+  void OnCreateNotifyEventHandler(EventType event_type, Event event);
+  void OnDestroyNotifyEventHandler(EventType event_type, Event event);
+  void OnMapRequestEventHandler(EventType event_type, Event event);
+  void OnUnmapNotifyEventHandler(EventType event_type, Event event);
+  void OnPropertyNotifyEventHandler(EventType event_type, Event event);
+  void OnClientMessageEventHandler(EventType event_type, Event event);
+
+private:
+  Connection &connection_;
+  std::size_t current_screen_;
+  // std::map<std::size_t, std::vector<std::size_t>> workspaces_;
 };
 
-inline void DispatchEvent(Connection &connection, EventType event_type,
-                          Event event) {
-  if (auto it = event_map.find(event_type); it != event_map.end()) {
-    it->second(connection, event_type, std::move(event));
+template <typename To> inline auto CastEventType(Event event) {
+  return std::unique_ptr<To, decltype(event.get_deleter())>{
+      reinterpret_cast<To *>(event.release()), event.get_deleter()};
+}
+
+inline void EventHandler::DispatchEvent(EventType event_type, Event event) {
+  switch (event_type) {
+  case 0:
+    OnErrorEventHandler(event_type, std::move(event));
+    break;
+  case XCB_CONFIGURE_REQUEST:
+    OnConfigureRequestEventHandler(event_type, std::move(event));
+    break;
+  case XCB_MOTION_NOTIFY:
+    OnMotionNotifyEventHandler(event_type, std::move(event));
+    break;
+  case XCB_KEY_PRESS:
+    OnKeyPressEventHandler(event_type, std::move(event));
+    break;
+  case XCB_ENTER_NOTIFY:
+    OnEnterNotifyEventHandler(event_type, std::move(event));
+    break;
+  case XCB_LEAVE_NOTIFY:
+    OnLeaveNotifyEventHandler(event_type, std::move(event));
+    break;
+  case XCB_FOCUS_IN:
+    OnFocusInEventHandler(event_type, std::move(event));
+    break;
+  case XCB_FOCUS_OUT:
+    OnFocusOutEventHandler(event_type, std::move(event));
+    break;
+  case XCB_CREATE_NOTIFY:
+    OnCreateNotifyEventHandler(event_type, std::move(event));
+    break;
+  case XCB_DESTROY_NOTIFY:
+    OnDestroyNotifyEventHandler(event_type, std::move(event));
+    break;
+  case XCB_MAP_REQUEST:
+    OnMapRequestEventHandler(event_type, std::move(event));
+    break;
+  case XCB_UNMAP_NOTIFY:
+    OnUnmapNotifyEventHandler(event_type, std::move(event));
+    break;
+  case XCB_PROPERTY_NOTIFY:
+    OnPropertyNotifyEventHandler(event_type, std::move(event));
+    break;
+  case XCB_CLIENT_MESSAGE:
+    OnClientMessageEventHandler(event_type, std::move(event));
+    break;
+  default:
+    break;
   }
 }

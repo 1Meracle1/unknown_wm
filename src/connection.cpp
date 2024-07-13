@@ -3,6 +3,7 @@
 #include "keys.h"
 #include <memory>
 #include <xcb/xcb.h>
+#include <xcb/xcb_errors.h>
 #include <xcb/xcb_keysyms.h>
 
 std::unique_ptr<Connection> Connection::Init() {
@@ -13,18 +14,18 @@ std::unique_ptr<Connection> Connection::Init() {
   }
   auto error = xcb_connection_has_error(conn);
   if (error > 0) {
-    ERRORF("XCB connection error: {}", error);
+    ERROR("XCB connection error: {}", error);
     xcb_disconnect(conn);
     return nullptr;
   }
 
   std::vector<xcb_screen_t *> screens;
-  INFOF("Screens expected: {}", screen_number);
+  INFO("Screens expected: {}", screen_number);
   xcb_screen_iterator_t iter = xcb_setup_roots_iterator(xcb_get_setup(conn));
   for (; iter.rem; --screen_number, xcb_screen_next(&iter)) {
     screens.emplace_back(iter.data);
   }
-  INFOF("Screens found: {}", screens.size());
+  INFO("Screens found: {}", screens.size());
 
   return std::unique_ptr<Connection>(new Connection(conn, std::move(screens)));
 }
@@ -32,9 +33,14 @@ std::unique_ptr<Connection> Connection::Init() {
 Connection::Connection(xcb_connection_t *connection,
                        std::vector<xcb_screen_t *> &&screens)
     : connection_{connection}, screens_{std::move(screens)},
-      key_symbols_{xcb_key_symbols_alloc(connection_)} {}
+      key_symbols_{xcb_key_symbols_alloc(connection_)} {
+  if (xcb_errors_context_new(connection_, &errors_context_)) {
+    ERROR("Failed to initialize errors context");
+  }
+}
 
 Connection::~Connection() {
+  xcb_errors_context_free(errors_context_);
   xcb_key_symbols_free(key_symbols_);
   xcb_disconnect(connection_);
 }
@@ -98,7 +104,9 @@ Connection::ListMappedWindows() const {
   auto focus_reply = xcb_get_input_focus_reply(
       connection_, xcb_get_input_focus(connection_), &error);
   if (error) {
-    ERRORF("Failed to get input focus reply: {}", error->error_code);
+    ERROR("Failed to get input focus reply: {}",
+          xcb_errors_get_name_for_error(errors_context_, error->error_code,
+                                        nullptr));
   } else if (focus_reply->focus != XCB_NONE) {
     bool is_root = false;
     for (auto screen : screens_) {
@@ -148,7 +156,7 @@ void Connection::GrabKey(uint16_t modifier, xcb_keycode_t key) const {
                              XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
     auto error = xcb_request_check(connection_, cookie);
     if (error) {
-      ERRORF("Failed to grab key: {}, error: {}", key, error->error_code);
+      ERROR("Failed to grab key: {}, error: {}", key, error->error_code);
       free(error);
     }
   }

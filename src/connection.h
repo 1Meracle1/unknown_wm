@@ -4,6 +4,7 @@
 #include <concepts>
 #include <type_traits>
 #include <xcb/xcb.h>
+#include <xcb/xcb_errors.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xproto.h>
 
@@ -14,6 +15,8 @@ concept ConvertibleToU32 =
 class Connection {
 public:
   static std::unique_ptr<Connection> Init();
+  // Connection(const Connection &) = delete;
+  // Connection &operator=(const Connection &) noexcept = delete;
   ~Connection();
 
   [[nodiscard]] inline const std::vector<xcb_screen_t *> &GetScreens() const;
@@ -55,6 +58,8 @@ public:
   inline void Flush() const;
   [[nodiscard]] inline auto WaitForEvent() const;
 
+  [[nodiscard]] inline auto GetWindowAttributes(xcb_window_t window) const;
+
 private:
   explicit Connection(xcb_connection_t *connection,
                       std::vector<xcb_screen_t *> &&screens);
@@ -63,6 +68,7 @@ private:
   xcb_connection_t *connection_;
   std::vector<xcb_screen_t *> screens_;
   xcb_key_symbols_t *key_symbols_;
+  xcb_errors_context_t *errors_context_{nullptr};
 };
 
 [[nodiscard]] inline const std::vector<xcb_screen_t *> &
@@ -80,9 +86,10 @@ inline auto Connection::ChangeWindowAttributesChecked(xcb_window_t window,
       xcb_change_window_attributes_checked(connection_, window, flags, &values);
   auto error = xcb_request_check(connection_, cookie);
   if (error) {
-    ERRORF("Failed to change window attributes, error "
-           "code: {}",
-           error->error_code);
+    ERROR("Failed to change window attributes, error "
+          "code: {}",
+          xcb_errors_get_name_for_error(errors_context_, error->error_code,
+                                        nullptr));
     free(error);
     is_ok = false;
   }
@@ -122,7 +129,9 @@ inline auto Connection::ConfigureWindow(xcb_window_t window,
       xcb_configure_window(connection_, window, values_mask, values_list);
   auto error = xcb_request_check(connection_, cookie);
   if (error) {
-    ERRORF("Failed to configure window: {}", error->error_code);
+    ERROR("Failed to configure window: {}",
+          xcb_errors_get_name_for_error(errors_context_, error->error_code,
+                                        nullptr));
     free(error);
     return false;
   }
@@ -135,7 +144,9 @@ inline bool Connection::SetInputFocus(const uint8_t revert_to,
                                             XCB_CURRENT_TIME);
   auto error = xcb_request_check(connection_, cookie);
   if (error) {
-    ERRORF("Failed to set focus window: {}", error->error_code);
+    ERROR("Failed to set focus window: {}",
+          xcb_errors_get_name_for_error(errors_context_, error->error_code,
+                                        nullptr));
     free(error);
     return false;
   }
@@ -147,4 +158,22 @@ inline void Connection::Flush() const { xcb_flush(connection_); }
 [[nodiscard]] inline auto Connection::WaitForEvent() const {
   return std::unique_ptr<xcb_generic_event_t, decltype(&free)>{
       xcb_wait_for_event(connection_), &free};
+}
+
+[[nodiscard]] inline auto
+Connection::GetWindowAttributes(xcb_window_t window) const {
+  std::unique_ptr<xcb_get_window_attributes_reply_t, decltype(&free)> attrs{
+      nullptr, free};
+  auto cookie = xcb_get_window_attributes(connection_, window);
+  xcb_generic_error_t *error;
+  auto reply = xcb_get_window_attributes_reply(connection_, cookie, &error);
+  if (error) {
+    ERROR("Failed to get window attributes: {}",
+          xcb_errors_get_name_for_error(errors_context_, error->error_code,
+                                        nullptr));
+    return std::unique_ptr<xcb_get_window_attributes_reply_t, decltype(&free)>{
+        nullptr, free};
+  }
+  return std::unique_ptr<xcb_get_window_attributes_reply_t, decltype(&free)>{
+      reply, free};
 }

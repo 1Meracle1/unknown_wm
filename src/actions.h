@@ -1,6 +1,7 @@
 #pragma once
 
 #include "connection.h"
+#include "event.h"
 #include "logging.h"
 #include <functional>
 
@@ -32,27 +33,31 @@ inline constexpr std::size_t function_arg_count_v =
 template <typename F, typename... Args>
 constexpr inline auto Action(F &&func, Args &&...args) {
   return [func = std::forward<F>(func), ... args = std::forward<Args>(args)](
-             Connection &connection) { func(connection, args...); };
+             EventHandler &event_handler) { func(event_handler, args...); };
 }
 
-inline void WindowResize(Connection &connection, int x_amount, int y_amount) {
-  DEBUG("Action: WindowResize");
+inline void WindowResize(EventHandler &event_handler, int x_amount,
+                         int y_amount) {
+  event_handler.WindowResize(x_amount, y_amount);
 }
 
-inline void WindowMove(Connection &connection, int x_amount, int y_amount) {
-  DEBUG("Action: WindowMove");
+inline void WindowMove(EventHandler &event_handler, int x_amount,
+                       int y_amount) {
+  event_handler.WindowMove(x_amount, y_amount);
 }
 
-inline void WindowFocus(Connection &connection, int x_amount, int y_amount) {
-  DEBUG("Action: WindowFocus");
+inline void WindowFocus(EventHandler &event_handler, int x_amount,
+                        int y_amount) {
+  event_handler.WindowFocus(x_amount, y_amount);
 }
 
-inline void WorkspaceFocus(Connection &connection, uint32_t workspace_id) {
-  DEBUG("Action: WorkspaceFocus");
+inline void WorkspaceFocus(EventHandler &event_handler, uint32_t workspace_id) {
+  event_handler.WorkspaceFocus(workspace_id);
 }
 
-inline void WorkspaceWindowMove(Connection &connection, uint32_t workspace_id) {
-  DEBUG("Action: WorkspaceWindowMove");
+inline void WorkspaceWindowMove(EventHandler &event_handler,
+                                uint32_t workspace_id) {
+  event_handler.WorkspaceWindowMove(workspace_id);
 }
 
-using ActionType = std::function<void(Connection &)>;
+using ActionType = std::function<void(EventHandler &)>;
