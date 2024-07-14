@@ -8,12 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(PkgConfig)
 pkg_check_modules(X11 REQUIRED x11)
-pkg_check_modules(XCB REQUIRED xcb)
-pkg_check_modules(XCB_KEYSYMS REQUIRED xcb-keysyms)
-pkg_check_modules(XCB_UTIL REQUIRED xcb-util)
-pkg_check_modules(XCB_ERRORS REQUIRED xcb-errors)
-pkg_check_modules(XCB_EWMH REQUIRED xcb-ewmh)
-pkg_check_modules(XCB_ICCCM REQUIRED xcb-icccm)
+pkg_check_modules(XCB REQUIRED xcb xcb-keysyms xcb-util xcb-errors xcb-ewmh xcb-icccm)
 
 add_executable(${PROJECT_NAME} 
   src/main.cpp
@@ -64,10 +59,6 @@ target_compile_options(${PROJECT_NAME} PRIVATE
   
   ${X11_CFLAGS}
   ${XCB_CFLAGS}
-  ${XCB_KEYSYMS_CFLAGS}
-  ${XCB_ERRORS_CFLAGS}
-  ${XCB_EWMH_CFLAGS}
-  ${XCB_ICCCM_CFLAGS}
 )
 target_link_options(${PROJECT_NAME} PRIVATE
   -fsanitize=address,leak,undefined
@@ -76,20 +67,11 @@ target_link_options(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME} PRIVATE 
   ${X11_INCLUDE_DIRS}
   ${XCB_INCLUDE_DIRS}
-  ${XCB_KEYSYMS_INCLUDE_DIRS}
-  ${XCB_ERRORS_INCLUDE_DIRS}
-  ${XCB_EWMH_INCLUDE_DIRS}
-  ${XCB_ICCCM_INCLUDE_DIRS}
   ${SPD_LOG_DIR}/include
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE 
   ${X11_LIBRARIES}
   ${XCB_LIBRARIES}
-  ${XCB_KEYSYMS_LIBRARIES}
-  ${XCB_UTIL_LIBRARIES}
-  ${XCB_ERRORS_LIBRARIES}
-  ${XCB_EWMH_LIBRARIES}
-  ${XCB_ICCCM_LIBRARIES}
   spdlog::spdlog
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE
