@@ -8,22 +8,22 @@
 #include <xcb/xproto.h>
 
 namespace Keys {
-constexpr uint32_t Super = XCB_MOD_MASK_4;
-constexpr uint32_t Alt = XCB_MOD_MASK_1;
-constexpr uint32_t Shift = XCB_MOD_MASK_SHIFT;
-constexpr uint32_t Ctrl = XCB_MOD_MASK_CONTROL;
-constexpr uint32_t CapsLock = XCB_MOD_MASK_LOCK;
+constexpr uint32_t Super      = XCB_MOD_MASK_4;
+constexpr uint32_t Alt        = XCB_MOD_MASK_1;
+constexpr uint32_t Shift      = XCB_MOD_MASK_SHIFT;
+constexpr uint32_t Ctrl       = XCB_MOD_MASK_CONTROL;
+constexpr uint32_t CapsLock   = XCB_MOD_MASK_LOCK;
 constexpr uint32_t ScrollLock = XCB_MOD_MASK_5;
-constexpr uint32_t NumLock = XCB_MOD_MASK_2;
+constexpr uint32_t NumLock    = XCB_MOD_MASK_2;
 
 constexpr uint32_t Return = XK_Return;
 
-constexpr uint32_t Left = XK_Left;
+constexpr uint32_t Left  = XK_Left;
 constexpr uint32_t Right = XK_Right;
-constexpr uint32_t Up = XK_Up;
-constexpr uint32_t Down = XK_Down;
+constexpr uint32_t Up    = XK_Up;
+constexpr uint32_t Down  = XK_Down;
 
-constexpr uint32_t Plus = XK_plus;
+constexpr uint32_t Plus  = XK_plus;
 constexpr uint32_t Minus = XK_minus;
 
 constexpr uint32_t Number_1 = XK_1;

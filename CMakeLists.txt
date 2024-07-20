@@ -2,26 +2,32 @@ cmake_minimum_required(VERSION 3.28)
 project(unknown_wm)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(PkgConfig)
 pkg_check_modules(X11 REQUIRED x11)
-pkg_check_modules(XCB REQUIRED xcb xcb-keysyms xcb-util xcb-errors xcb-ewmh xcb-icccm)
+pkg_check_modules(XCB REQUIRED xcb xcb-keysyms xcb-util xcb-errors xcb-ewmh xcb-icccm xcb-randr xcb-cursor xcb-shape)
 
 add_executable(${PROJECT_NAME} 
   src/main.cpp
-  src/keys.h
-  src/actions.h
-  src/config.h
-  src/logging.h
   src/window_manager.h
   src/window_manager.cpp
-  src/connection.h
-  src/connection.cpp
-  src/event.h
-  src/event.cpp
+  src/ewmh.h
+  src/ewmh.cpp
+  src/monitor.h
+  src/monitor.cpp
+  src/types.h
+  src/logging.h
+  src/keys.h
+
+  # src/actions.h
+  # src/config.h
+  # src/connection.h
+  # src/connection.cpp
+  # src/event.h
+  # src/event.cpp
 )
 
 set(SPD_LOG_DIR third_party/spdlog)
@@ -65,14 +71,14 @@ target_link_options(${PROJECT_NAME} PRIVATE
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
+  ${SPD_LOG_DIR}/include
   ${X11_INCLUDE_DIRS}
   ${XCB_INCLUDE_DIRS}
-  ${SPD_LOG_DIR}/include
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE 
+  spdlog::spdlog
   ${X11_LIBRARIES}
   ${XCB_LIBRARIES}
-  spdlog::spdlog
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE
   <spdlog/spdlog.h>

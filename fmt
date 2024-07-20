@@ -1,0 +1,34 @@
+#ifndef EWMH_H
+#define EWMH_H
+
+#include "logging.h"
+#include <memory>
+#include <xcb/xcb.h>
+#include <xcb/xcb_ewmh.h>
+
+class Ewmh {
+public:
+  static auto                      Init(xcb_connection_t *connection) -> Ewmh;
+  [[nodiscard]] static inline auto Instance() -> Ewmh & {
+     return instance_; }
+  Ewmh()                        = default;
+  Ewmh(Ewmh &&)                 = default;
+  Ewmh(const Ewmh &)            = delete;
+  Ewmh &operator=(const Ewmh &) = delete;
+  Ewmh &operator=(Ewmh &&)      = default;
+
+  [[nodiscard]] inline auto IsValid() const -> bool { return is_valid_; }
+  void                      SetSupportedAtoms(int screen_number);
+  bool SetWindowSupportingWM(const std::string &wm_name, xcb_window_t root, xcb_window_t window);
+  void UpdateCurrentDesktop();
+
+private:
+  explicit Ewmh(xcb_ewmh_connection_t *ewmh_connection);
+
+private:
+  static Ewmh            instance_;
+  bool                   is_valid_{false};
+  xcb_ewmh_connection_t *ewmh_connection_{nullptr};
+};
+
+#endif

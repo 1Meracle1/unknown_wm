@@ -4,9 +4,8 @@
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
 
-#define ERROR(...)                                                             \
-  SPDLOG_LOGGER_ERROR(spdlog::default_logger_raw(), __VA_ARGS__)
-
+#define ERROR(...) SPDLOG_LOGGER_ERROR(spdlog::default_logger_raw(), __VA_ARGS__)
+#define WARN(...) SPDLOG_LOGGER_WARN(spdlog::default_logger_raw(), __VA_ARGS__)
 #define INFO(...) SPDLOG_LOGGER_INFO(spdlog::default_logger_raw(), __VA_ARGS__)
 
 #ifdef NDEBUG
