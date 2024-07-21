@@ -64,7 +64,8 @@ private:
   void                   RemapWindow(WmWindow &window);
   [[nodiscard]] Vector2D CursorPosition() const;
   void                   ApplyShapeToWindow(WmWindow &window);
-  void                   FocusWindow(xcb_window_t window);
+  void                   ApplyFocusToWindow(xcb_window_t window);
+  void                   UnapplyFocusToWindow(xcb_window_t window);
   // void                   RecalculateSizePosAll();
   // void                   RecalculateSizePosAroundFocused();
   // void                   RecalculateSizePosFocused();

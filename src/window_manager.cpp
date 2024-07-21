@@ -64,8 +64,7 @@ auto WindowManager::Init() -> WindowManager {
   }
 
   std::array events{XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-                    XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_PROPERTY_CHANGE |
-                    XCB_EVENT_MASK_KEY_PRESS};
+                    XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_PROPERTY_CHANGE};
   xcb_change_window_attributes_checked(connection, screen->root, XCB_CW_EVENT_MASK, events.data());
 
   return WindowManager(connection, screen, std::move(ewmh));
@@ -207,7 +206,7 @@ void WindowManager::OnKeyPressEventHandler([[maybe_unused]] Event event) {
               }
             }
             if (next_window != XCB_WINDOW_NONE) {
-              FocusWindow(next_window);
+              ApplyFocusToWindow(next_window);
             }
           } else {
             ERROR("Failed to find focused window in the windows_ vector.");
@@ -228,13 +227,31 @@ void WindowManager::OnKeyPressEventHandler([[maybe_unused]] Event event) {
   }
 }
 
-void WindowManager::OnEnterNotifyEventHandler([[maybe_unused]] Event event) {}
+void WindowManager::OnEnterNotifyEventHandler([[maybe_unused]] Event event) {
+  INFO("On Enter.");
+  auto     evt      = reinterpret_cast<xcb_enter_notify_event_t *>(event.get());
+  uint32_t values[] = {0x9299f7};
+  xcb_configure_window(connection_, evt->event, XCB_CW_BORDER_PIXEL, values);
+}
 
-void WindowManager::OnLeaveNotifyEventHandler([[maybe_unused]] Event event) {}
+void WindowManager::OnLeaveNotifyEventHandler([[maybe_unused]] Event event) {
+  INFO("On Leave.");
+  auto     evt      = reinterpret_cast<xcb_leave_notify_event_t *>(event.get());
+  uint32_t values[] = {0x0a0a0a};
+  xcb_configure_window(connection_, evt->event, XCB_CW_BORDER_PIXEL, values);
+}
 
-void WindowManager::OnFocusInEventHandler([[maybe_unused]] Event event) {}
+void WindowManager::OnFocusInEventHandler([[maybe_unused]] Event event) {
+  auto evt = reinterpret_cast<xcb_focus_in_event_t *>(event.get());
+  INFO("Focus In.");
+  ApplyFocusToWindow(evt->event);
+}
 
-void WindowManager::OnFocusOutEventHandler([[maybe_unused]] Event event) {}
+void WindowManager::OnFocusOutEventHandler([[maybe_unused]] Event event) {
+  auto evt = reinterpret_cast<xcb_focus_out_event_t *>(event.get());
+  INFO("Focus Out.");
+  UnapplyFocusToWindow(evt->event);
+}
 
 void WindowManager::OnCreateNotifyEventHandler([[maybe_unused]] Event event) {}
 
@@ -283,6 +300,11 @@ auto WindowManager::IsWindowManagable([[maybe_unused]] xcb_window_t window) -> b
 }
 
 void WindowManager::RemapWindow(WmWindow &new_window) {
+  {
+    uint32_t window_events[] = {XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_LEAVE_WINDOW |
+                                XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY};
+    xcb_change_window_attributes(connection_, new_window.id, XCB_CW_EVENT_MASK, window_events);
+  }
   if (auto reply = ewmh_.Property("_NET_WM_NAME", new_window.id); reply) {
     auto len = xcb_get_property_value_length(reply.get());
     if (len > 0) {
@@ -395,11 +417,6 @@ void WindowManager::RemapWindow(WmWindow &new_window) {
     xcb_configure_window(connection_, window.id, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT,
                          Vector2DToArray(window.size).data());
   }
-  // for (auto [i, window] : std::ranges::reverse_view(windows_) | std::views::drop(1) |
-  //                             std::views::filter([](const auto &w) { return w.is_mapped; }) |
-  //                             std::views::enumerate) {
-  //   INFO("i={}, i%3={}", i, i % 3);
-  // }
   for (auto &window : windows) {
     window.position.y -= monitor.size.y;
     window.is_mapped = is_visible(window, monitor);
@@ -409,10 +426,9 @@ void WindowManager::RemapWindow(WmWindow &new_window) {
       xcb_map_window(connection_, window.id);
     }
   }
-  // RecalculateSizePosAll();
 
-  ApplyShapeToWindow(new_window);
-  FocusWindow(new_window.id);
+  // ApplyShapeToWindow(new_window);
+  ApplyFocusToWindow(new_window.id);
 }
 
 [[nodiscard]] Vector2D WindowManager::CursorPosition() const {
@@ -495,7 +511,7 @@ void WindowManager::ApplyShapeToWindow(WmWindow &window) {
   xcb_free_pixmap(connection_, clip_pixmap);
 }
 
-void WindowManager::FocusWindow(xcb_window_t window) {
+void WindowManager::ApplyFocusToWindow(xcb_window_t window) {
   if (window != screen_->root) {
     auto it =
         std::ranges::find_if(windows_, [window](const auto &win) { return win.id == window; });
@@ -507,12 +523,36 @@ void WindowManager::FocusWindow(xcb_window_t window) {
         }
         INFO("Applying focus to a window.");
         xcb_ungrab_pointer(connection_, XCB_CURRENT_TIME);
+
+        xcb_set_input_focus(connection_, XCB_INPUT_FOCUS_PARENT, XCB_NONE, XCB_CURRENT_TIME);
+        xcb_set_input_focus(connection_, XCB_INPUT_FOCUS_PARENT, window, XCB_CURRENT_TIME);
         xcb_set_input_focus(connection_, XCB_INPUT_FOCUS_POINTER_ROOT, window, XCB_CURRENT_TIME);
+
+        uint32_t values[] = {0x9299f7};
+        xcb_configure_window(connection_, window, XCB_CW_BORDER_PIXEL, values);
+
         ewmh_.UpdateCurrentWindow(window);
         ewmh_.UpdateWindow(window, true);
         ewmh_.UpdateWindow(last_focused_window_.value(), false);
         last_focused_window_ = std::optional<xcb_window_t>{window};
       }
+    }
+  }
+}
+
+void WindowManager::UnapplyFocusToWindow(xcb_window_t window) {
+  if (window != screen_->root) {
+    if (last_focused_window_ && last_focused_window_.value() == window) {
+      INFO("Unapplying focus to a window.");
+      xcb_ungrab_pointer(connection_, XCB_CURRENT_TIME);
+
+      xcb_set_input_focus(connection_, XCB_INPUT_FOCUS_PARENT, XCB_NONE, XCB_CURRENT_TIME);
+
+      uint32_t values[] = {0x0a0a0a};
+      xcb_configure_window(connection_, window, XCB_CW_BORDER_PIXEL, values);
+
+      ewmh_.UpdateWindow(last_focused_window_.value(), false);
+      last_focused_window_ = std::nullopt;
     }
   }
 }
